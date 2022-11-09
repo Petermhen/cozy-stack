@@ -375,6 +375,13 @@ func (w *konnectorWorker) ensureFolderToSave(ctx *job.WorkerContext, inst *insta
 		dir.CozyMetadata.SourceAccount = acc.ID()
 		_ = couchdb.UpdateDoc(inst, dir)
 	}
+
+	// 6. Ensure that the account knows the folder path
+	if acc.FolderPath != folderPath {
+		acc.FolderPath = folderPath
+		_ = couchdb.UpdateDoc(inst, acc)
+	}
+
 	return nil
 }
 

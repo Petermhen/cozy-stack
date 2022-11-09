@@ -22,6 +22,7 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var inst *instance.Instance
@@ -302,14 +303,10 @@ echo "{\"type\": \"toto\", \"message\": \"COZY_URL=${COZY_URL}\"}"
 	defer func() { _ = osFs.RemoveAll(tmpScript) }()
 
 	err := afero.WriteFile(osFs, tmpScript, []byte(script), 0)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	err = osFs.Chmod(tmpScript, 0777)
-	if !assert.NoError(t, err) {
-		return
-	}
+	require.NoError(t, err)
 
 	installer, err := app.NewInstaller(inst, app.Copier(consts.KonnectorType, inst),
 		&app.InstallerOptions{
@@ -320,13 +317,9 @@ echo "{\"type\": \"toto\", \"message\": \"COZY_URL=${COZY_URL}\"}"
 		},
 	)
 	if err != app.ErrAlreadyExists {
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 		_, err = installer.RunSync()
-		if !assert.NoError(t, err) {
-			return
-		}
+		require.NoError(t, err)
 	}
 
 	var wg sync.WaitGroup
@@ -347,14 +340,14 @@ echo "{\"type\": \"toto\", \"message\": \"COZY_URL=${COZY_URL}\"}"
 	wg.Wait()
 	wg.Add(1)
 	acc := &account.Account{DefaultFolderPath: "/Administrative/toto"}
-	assert.NoError(t, couchdb.CreateDoc(inst, acc))
+	require.NoError(t, couchdb.CreateDoc(inst, acc))
 	defer func() { _ = couchdb.DeleteDoc(inst, acc) }()
 	msg, err := job.NewMessage(map[string]interface{}{
 		"konnector":      "my-konnector-1",
 		"folder_to_save": "id-of-a-deleted-folder",
 		"account":        acc.ID(),
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	j := job.NewJob(inst, &job.JobRequest{
 		Message:    msg,
@@ -365,17 +358,21 @@ echo "{\"type\": \"toto\", \"message\": \"COZY_URL=${COZY_URL}\"}"
 	ctx := job.NewWorkerContext("id", j, inst).
 		WithCookie(&konnectorWorker{})
 	err = worker(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	wg.Wait()
 	dir, err := inst.VFS().DirByPath("/Administrative/toto")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, dir.ReferencedBy, 1)
 	assert.Equal(t, dir.ReferencedBy[0].ID, "io.cozy.konnectors/my-konnector-1")
 	assert.Equal(t, "my-konnector-1", dir.CozyMetadata.CreatedByApp)
 	assert.Contains(t, dir.CozyMetadata.CreatedOn, inst.Domain)
 	assert.Len(t, dir.CozyMetadata.UpdatedByApps, 1)
 	assert.Equal(t, dir.CozyMetadata.SourceAccount, acc.ID())
+	var updatedAcc account.Account
+	err = couchdb.GetDoc(inst, consts.Accounts, acc.ID(), &updatedAcc)
+	require.NoError(t, err)
+	assert.Equal(t, updatedAcc.FolderPath, "/Administrative/toto")
 }
 
 func TestMain(m *testing.M) {
