@@ -47,10 +47,10 @@ require (
 	github.com/ugorji/go/codec v1.2.7
 	github.com/yuin/goldmark v1.5.2
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
-	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69
-	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2
+	golang.org/x/image v0.2.0
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2
 	golang.org/x/sync v0.0.0-20220907140024-f12130a52804
-	golang.org/x/text v0.3.7
+	golang.org/x/text v0.5.0
 	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
 )
